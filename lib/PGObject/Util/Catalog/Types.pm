@@ -4,6 +4,9 @@ use 5.008;
 use strict;
 use warnings FATAL => 'all';
 
+use Carp;
+use Memoize;
+
 =head1 NAME
 
 PGObject::Util::Catalog::Types - Utilities for working with Composite types
@@ -28,43 +31,11 @@ To get the attributes of a composite type:
         typeschema => 'public',
                dbh => $dbh);
 
-To generate a CREATE statement for the composite type:
-
-   my $query = create_type_ddl(
-            typename => 'foo', 
-          typeschema => 'public',
-          attributes => \@attributes,
-                 isa => 'table', # or 'type'
-   );
-
-To print an ALTER statement for the composite type:
-
-   print add_attribute_ddl(
-         typename => 'foo', 
-       typeschema => public,
-        attribute => {attname => 'foobar', atttype => 'text'},
-              isa => 'table',
-   );
-
-This would print out:
-
-  ALTER TABLE public.foo ADD foobar text;
-
-=head1 IMPORT OPTIONS
-
-=head2 :memoize
-
-memoizes the catelog lookup results.
-
 =head1 EXPORT FUNCTIONS
 
 =over
 
 =item get_attributes
-
-=item create_type_ddl
-
-=item add_attribute_ddl
 
 =back
 
@@ -86,8 +57,7 @@ Name of type
 
 =item typeschema
 
-Schema to look in.  If not provided looks in the search path, which requires 
-an extra db round trip.
+Schema to look in.  This is required
 
 =item dbh
 
@@ -108,25 +78,29 @@ The attribute name
 
 The name of the type
 
+=back
+
 =cut
 
 sub get_attributes {
     my %args = @_;
-    if (!%args
-}
+    croak 'No DB Handle Provided' unless $args{dbh};
+    croak 'No schema provided' unless $args{typeschema};
 
-=head2 create_type_ddl
-
-=cut
-
-sub create_type_ddl {
-}
-
-=head2 add_attribute_ddl
-
-=cut
-
-sub add_attribute_ddl {
+    my $query = "
+       SELECT attname, typname as atttype
+         FROM pg_attribute a
+         JOIN pg_class r ON a.attrelid = r.oid
+         JOIN pg_type t ON t.oid = a.atttypid
+         JOIN pg_namespace n ON r.relnamespace = n.oid
+        WHERE WHERE relname = ? AND nspname = ? and attnum > 0
+     ORDER BY a.attnum
+     ";
+     my $sth = $args{dbh}->prepare($query);
+     $sth->execute($args{typename}, $args{typeschema});
+     my @cols;
+     push @cols, $_ while $sth->fetchrow_hashref('NAME_lc');
+     return @cols;
 }
 
 =head1 AUTHOR
@@ -151,7 +125,7 @@ You can find documentation for this module with the perldoc command.
 
 You can also look for information at:
 
-=over 4
+=over
 
 =item * RT: CPAN's request tracker (report bugs here)
 
