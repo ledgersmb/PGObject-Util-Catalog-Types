@@ -3,7 +3,7 @@ use Test::More;
 use DBI;
 
 plan skip_all => 'Not set up for db tests' unless $ENV{DB_TESTING};
-plan tests => 27;
+plan tests => 31;
 
 # SETUP
 my $dbh1 = DBI->connect('dbi:Pg:dbname=postgres', 'postgres');
@@ -12,7 +12,7 @@ $dbh1->do('CREATE DATABASE pgobject_test_db') if $dbh1;
 my $dbh = DBI->connect('dbi:Pg:dbname=pgobject_test_db', 'postgres');
 $dbh->do("CREATE SCHEMA $_") for qw(typetest viewtest tabletest);
 
-$dbh->do('CREATE TYPE typetest.footype AS 
+$dbh->do('CREATE TYPE typetest.footype AS (
     foo int,
     bar text,
     baz bigint,
@@ -24,10 +24,10 @@ $dbh->do('CREATE TABLE tabletest.footable OF typetest.footype');
 $dbh->do('CREATE VIEW viewtest.fooview AS SELECT * FROM tabletest.footable');
 
 my @cols = (
-   { name => 'foo',    type => 'int' },
+   { name => 'foo',    type => 'int4' },
    { name => 'bar',    type => 'text' },
-   { name => 'baz',    type => 'int' },
-   { name => 'barbaz', type => 'text' },
+   { name => 'baz',    type => 'int8' },
+   { name => 'barbaz', type => 'varchar' },
 );
 
 # TESTS
@@ -52,7 +52,7 @@ my @tablecols = get_attributes(
     typeschema => 'typetest'
 );
 
-is(scalar @typecols, 4, 'Correct number of cols returned for table');
+is(scalar @tablecols, 4, 'Correct number of cols returned for table');
 
 is($tablecols[$_]->{attname}, $cols[$_]->{name}, 
    "Column $_, correct name, table")
@@ -75,6 +75,7 @@ is($viewcols[$_]->{attname}, $cols[$_]->{name}, "Column $_, correct name, view")
 
 is($viewcols[$_]->{atttype}, $cols[$_]->{type}, "Column $_, correct name, view")
    for 1 ..  scalar @viewcols;
+
 
 # CLEANUP
 $dbh->disconnect;

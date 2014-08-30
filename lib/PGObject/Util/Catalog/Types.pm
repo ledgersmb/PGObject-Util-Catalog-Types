@@ -96,14 +96,16 @@ sub get_attributes {
          JOIN pg_class r ON a.attrelid = r.oid
          JOIN pg_type t ON t.oid = a.atttypid
          JOIN pg_namespace n ON r.relnamespace = n.oid
-        WHERE WHERE relname = ? AND nspname = ? and attnum > 0
+        WHERE relname = ? AND nspname = ? and attnum > 0
      ORDER BY a.attnum
      ";
      my $sth = $args{dbh}->prepare($query);
      $sth->execute($args{typename}, $args{typeschema});
      my @cols;
-     push @cols, $_ while $sth->fetchrow_hashref('NAME_lc');
-     return @cols;
+     while (my $ref = $sth->fetchrow_hashref('NAME_lc')){
+         push @cols, $ref;
+     }
+     return grep {defined $_->{attname}} @cols;
 }
 
 =head1 AUTHOR
