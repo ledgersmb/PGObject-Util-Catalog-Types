@@ -19,6 +19,9 @@ Version 0.01
 
 our $VERSION = '0.01';
 
+use Exporter 'import';
+our @EXPORT_OK = qw(get_attributes);
+
 
 =head1 SYNOPSIS
 
@@ -31,7 +34,7 @@ To get the attributes of a composite type:
         typeschema => 'public',
                dbh => $dbh);
 
-=head1 EXPORT FUNCTIONS
+=head1 OPTIONALLY EXPORTED FUNCTIONS
 
 =over
 
