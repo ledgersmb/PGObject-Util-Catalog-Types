@@ -7,20 +7,21 @@ use warnings FATAL => 'all';
 use Carp;
 use Memoize;
 
+use Exporter 'import';
+our @EXPORT_OK = qw(get_attributes);
+
 =head1 NAME
 
 PGObject::Util::Catalog::Types - Utilities for working with Composite types
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
-use Exporter 'import';
-our @EXPORT_OK = qw(get_attributes);
 
 
 =head1 SYNOPSIS
